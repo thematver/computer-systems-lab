@@ -1,2 +1,19 @@
 # computer-systems-lab
-Laboratory work №3 for Computer Systems course.
+Корепанов Матвей из группы P33101
+
+`asm | acc | harv | hw | instr | binary | stream | port | prob5`
+
+```
+       ASM
+        |                                       ввод (stream)
+        |                      Система команд        |
+        |                           |                v
+        |     +------------+        |          +------------+
+   -----*---->| Транслятор |--------*--------->|   Модель   |----> журнал
+      prob5   +------------+   машинный код    | процессора |
+                                 (binary)      +------------+
+                                                     |
+                                                     v
+                                                вывод (stream)
+
+```
