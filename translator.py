@@ -5,6 +5,8 @@
 import sys
 from enum import Enum
 
+from config import AddressMask
+
 
 class CursorState(Enum):
     DATA = 0
@@ -79,7 +81,10 @@ def parse_labels(code: list[str]):
     return labels
 
 
-def translate(source: str) -> (list, list):
+# pylint: disable=too-many-locals
+# pylint: disable=too-many-branches
+# pylint: disable=too-many-statements
+def translate(source: str) -> (list, list, list):
     with open(source, "r", encoding="utf-8") as file:
         code = file.readlines()
         state = CursorState.DATA
@@ -90,9 +95,120 @@ def translate(source: str) -> (list, list):
     mnemonics: list = []
     variables: dict = {}
     labels: dict = parse_labels(code)
-    print(data, mnemonics, variables, labels)
 
-    return [], []
+    for line in code:
+        tokens = line.split()
+        for value in tokens:
+            if ".data" in value:
+                assert state == CursorState.DATA, "Data segment has already set"
+                state = CursorState.DATA
+                continue
+            if ".code" in value:
+                assert state == CursorState.CODE, "Code segment has already set"
+                state = CursorState.CODE
+                continue
+            if value[0].startswith(";"):
+                continue
+
+            if state == CursorState.DATA:
+                if len(tokens) >= 2 and tokens[0][-1] == ":":
+                    name = tokens[0][:-1]
+                    value = tokens[1]
+                    assert (
+                        name not in variables
+                    ), f"Variable with {name} has already defined"
+                    try:
+                        value = int(value)
+                    except ValueError as exception:
+                        if len(value) == 1:
+                            value = ord(value)
+                        else:
+                            raise exception
+
+                elif len(tokens) == 1:
+                    if tokens[0][0] != ";" and not tokens[0].contains("data"):
+                        value = tokens[0]
+                        try:
+                            value = int(value)
+                        except ValueError as exc:
+                            if len(value) == 1:
+                                value = ord(value)
+                            else:
+                                raise ValueError(f"Invalid value {value}") from exc
+                        data.append(value)
+
+                if state == CursorState.CODE:
+                    if (
+                        len(tokens) == 0
+                        or tokens[0] == ""
+                        or tokens[0][0] == ";"
+                        or tokens[0].contains(".code")
+                    ):
+                        continue
+
+                    if tokens[0][-1] == ":":
+                        tokens.pop(0)
+                        if len(tokens) == 0:
+                            continue
+
+                    mnemonic: str = tokens[0].lower()
+
+                    # parse operand
+                    operand: str = tokens[1]
+
+                    if operand.startswith("#"):
+                        operand = operand[1:]
+                        try:
+                            value = int(operand)
+                            code.append(
+                                commands[mnemonic]
+                                << AddressMask.BIT_LENGTH + labels["start"]
+                            )
+                            continue
+                        except ValueError:
+                            pass
+
+                        assert operand in variables, f"Unknown variable name: {operand}"
+                        address: int = (
+                            variables[operand] + AddressMask.STRAIGHT_ABSOLUTE
+                        )
+
+                    elif operand[0] == "$":
+                        operand = operand[1:]
+                        try:
+                            value: int = int(operand)
+                            address: int = value
+                            assert address <= (
+                                1 << AddressMask.WIDTH
+                            ), "Address overflow"
+                            address += AddressMask.STRAIGHT_ABSOLUTE
+                        except ValueError:
+                            assert (
+                                operand in variables
+                            ), f"Unknown variable name: {operand}"
+                            address: int = (
+                                variables[operand] + AddressMask.INDIRECT_ABSOLUTE
+                            )
+
+                    elif operand in labels:
+                        address: int = labels[operand]
+
+                    elif operand in variables:
+                        address: int = (
+                            int(variables[operand]) + AddressMask.ADDR_REFERENCE
+                        )
+
+                    code.append(
+                        (commands[mnemonic].code << AddressMask.BIT_LENGTH) + address
+                    )
+
+                    mnemonics.append(mnemonic + " " + str(address))
+
+                else:
+                    code.append(commands[mnemonic] << AddressMask.BIT_LENGTH)
+                    mnemonics.append(mnemonic)
+
+            return code, data, mnemonics
 
 
 def main(args):
@@ -102,8 +218,8 @@ def main(args):
     with open(source, "rt", encoding="utf-8") as file:
         source = file.read()
 
-    code, data = translate(source)
-    print("source LoC:", len(source.split()), "code instr:", len(code))
+    code, data, mnemonics = translate(source)
+    print("source LoC:", len(source.split()), "code instr:", len(code), mnemonics)
     print(target, data)
 
 

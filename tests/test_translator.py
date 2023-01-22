@@ -24,19 +24,19 @@ class TranslatorTest(unittest.TestCase):
             self.assertEqual(result, snapshot)
 
     def test_cat_translation(self):
-        source: str = "test/in/test_cat.asm"
-        snap_out: str = "test/out/test_cat"
+        source: str = "in/cat.asm"
+        snap_out: str = "out/cat"
 
         self.assert_equal_output(source, snap_out)
 
     def test_hello_translation(self):
-        source: str = "test/in/test_hello.asm"
-        snap_out: str = "test/out/test_hello"
+        source: str = "in/hello.asm"
+        snap_out: str = "out/hello"
 
         self.assert_equal_output(source, snap_out)
 
     def test_prob5_translation(self):
-        source: str = "test/in/test_pron5.asm"
-        snap_out: str = "test/out/test_prob5"
+        source: str = "in/prob5.asm"
+        snap_out: str = "out/prob5"
 
         self.assert_equal_output(source, snap_out)
