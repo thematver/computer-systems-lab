@@ -7,14 +7,14 @@ Test translator module on three algorithms: cat, hello, prob5
 
 import unittest
 from tempfile import NamedTemporaryFile
-import translator
+from translator import main
 
 
 class TranslatorTest(unittest.TestCase):
     def assert_equal_output(self, source: str, snapshot_filename: str):
         with NamedTemporaryFile() as temp:
 
-            translator.main([source, temp.name])
+            main([source, temp.name])
 
             with open(source, encoding="utf-8") as file:
                 result = file.read()
@@ -24,19 +24,19 @@ class TranslatorTest(unittest.TestCase):
             self.assertEqual(result, snapshot)
 
     def test_cat_translation(self):
-        source: str = "in/cat.asm"
-        snap_out: str = "out/cat"
+        source: str = "tests/snaps/in/cat.asm"
+        snap_out: str = "tests/snaps/out/cat"
 
         self.assert_equal_output(source, snap_out)
 
     def test_hello_translation(self):
-        source: str = "in/hello.asm"
-        snap_out: str = "out/hello"
+        source: str = "tests/snaps/in/hello.asm"
+        snap_out: str = "tests/snaps/out/hello"
 
         self.assert_equal_output(source, snap_out)
 
     def test_prob5_translation(self):
-        source: str = "in/prob5.asm"
-        snap_out: str = "out/prob5"
+        source: str = "tests/snaps/in/prob5.asm"
+        snap_out: str = "tests/snaps/out/prob5"
 
         self.assert_equal_output(source, snap_out)
